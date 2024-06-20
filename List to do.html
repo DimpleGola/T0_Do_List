@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+ol {
+    padding: 0;
+    list-style: none;
+}
+
+ol li {
+    background: #e0f7fa;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: background 0.3s;
+}
+
+li.completed {
+    text-decoration: line-through;
+    color: #6c757d;
+    background: #c8e6c9;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 5px;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button#btn2 {
+    background: #ff5722;
+}
+
+button#btn2:hover {
+    background: #e64a19;
+}
+
+button#btn3 {
+    background: #ffeb3b;
+    color: #000;
+}
+
+button#btn3:hover {
+    background: #fdd835;
+}
+
+button#btn6 {
+    background: #ffc107;
+    color: #000;
+}
+
+button#btn6:hover {
+    background: #ffb300;
+}
+
+button#saveBtn {
+    background: #4caf50;
+}
+
+button#saveBtn:hover {
+    background: #45a049;
+}
+
+button#loadBtn {
+    background: #2196f3;
+}
+
+button#loadBtn:hover {
+    background: #1e88e5;
+}
+
+.cross {
+    color: red;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.dnone {
+    display: none;
+}
+
+input[type="text"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+#filter {
+    margin-left: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+    let clearedList = [];
+
+    function addItem(itemText, isCompleted = false) {
+        let item = $("<li><input type='checkbox' class='item-check'><span class='item-text'>" + itemText + "</span><span class='cross'>&nbsp;X</span></li>");
+        if (isCompleted) {
+            item.addClass('completed');
+            item.find('.item-check').prop('checked', true);
+        }
+        $("ol").append(item);
+    }
+
+    $("ol").on("click", ".cross", function(){
+        $(this).parent().remove();
+    });
+
+    $("ol").on("change", ".item-check", function(){
+        $(this).parent().toggleClass("completed");
+        filterItems($("#filter").val());
+    });
+
+    $("#btn2").click(function(){
+        clearedList = [];
+        $("ol li").each(function() {
+            let text = $(this).find('.item-text').text().trim();
+            clearedList.push({text: text, completed: $(this).hasClass('completed')});
+        });
+        $("ol").empty();
+    });
+
+    $("#btn3").click(function(){
+        $("ol").toggleClass("dnone");
+    });
+
+    $("#btn4").click(function(){
+        let full_list = [];
+        $("ol li").each(function() {
+            let text = $(this).find('.item-text').text().trim();
+            full_list.push(text);
+        });
+        alert(full_list.join("\n"));
+    });
+
+    $("#btn6").click(function(){
+        if (clearedList.length > 0) {
+            clearedList.forEach(function(item) {
+                addItem(item.text, item.completed);
+            });
+            clearedList = [];
+        } else {
+            alert("No items to undo");
+        }
+    });
+
+    // Add item from input box
+    $("#addItemBtn").click(function() {
+        let newItem = $("#newItem").val();
+        if (newItem) {
+            addItem(newItem);
+            $("#newItem").val('');
+            filterItems($("#filter").val());
+        }
+    });
+
+    // Filter items based on dropdown selection
+    $("#filter").change(function() {
+        filterItems($(this).val());
+    });
+
+    function filterItems(filter) {
+        $("ol li").each(function() {
+            let isChecked = $(this).find('.item-check').is(':checked');
+            if (filter === "all") {
+                $(this).show();
+            } else if (filter === "pending" && !isChecked) {
+                $(this).show();
+            } else if (filter === "completed" && isChecked) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    // Save list to local storage
+    $("#saveBtn").click(function() {
+        let listName = prompt("Enter a name for your list:");
+        if (listName) {
+            let listItems = [];
+            $("ol li").each(function() {
+                let itemText = $(this).find('.item-text').text().trim();
+                let isCompleted = $(this).hasClass('completed');
+                listItems.push({text: itemText, completed: isCompleted});
+            });
+            localStorage.setItem(listName, JSON.stringify(listItems));
+            alert("List saved as '" + listName + "'");
+        }
+    });
+
+    // Load list from local storage
+    $("#loadBtn").click(function() {
+        let listName = prompt("Enter the name of the list to load:");
+        if (listName) {
+            let savedList = localStorage.getItem(listName);
+            if (savedList) {
+                $("ol").empty();
+                let listItems = JSON.parse(savedList);
+                listItems.forEach(function(item) {
+                    addItem(item.text, item.completed);
+                });
+                alert("List '" + listName + "' loaded");
+            } else {
+                alert("No list found with the name '" + listName + "'");
+            }
+        }
+    });
+});
+</script>
+</head>
+<body>
+<div class="container">
+    <h2>Grocery List</h2>
+    <input type="text" id="newItem" placeholder="Enter new item">
+    <button id="addItemBtn">Add Item</button>
+    <select id="filter">
+        <option value="all">All Items</option>
+        <option value="pending">Pending Items</option>
+        <option value="completed">Completed Items</option>
+    </select>
+    <ol></ol>
+    <button id="btn2">Clear List</button>
+    <button id="btn3">Toggle History</button>
+    <button id="btn4">Print List</button>
+    <button id="btn6">Undo Clear</button>
+    <button id="saveBtn">Save List</button>
+    <button id="loadBtn">Load List</button>
+</div>
+</body>
+</html>
